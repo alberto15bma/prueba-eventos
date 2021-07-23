@@ -10,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class PromocionService {
 
@@ -24,5 +26,7 @@ public class PromocionService {
         respuesta.setMensaje("Promoción creada correctamente");
         return new ResponseEntity<>(respuesta, HttpStatus.OK);
     }
-
+    public List<Promocion> listaPromocion() {
+        return promocionRepository.findAll();
+    }
 }

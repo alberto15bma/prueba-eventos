@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class EventoService {
     @Autowired
@@ -21,5 +23,9 @@ public class EventoService {
         respuesta.setCodigo(HttpStatus.OK.value());
         respuesta.setMensaje("Tarea creada correctamente");
         return new ResponseEntity<>(respuesta, HttpStatus.OK);
+    }
+
+    public List<Evento> listaEventos() {
+        return eventoRepository.findAll();
     }
 }

@@ -16,11 +16,11 @@ public class Promocion {
     private String nombre;
     @Column(name = "fecha_inicio")
     private Date fechaInicio;
-    @Column(name = "fecha_inicio")
+    @Column(name = "fecha_fin")
     private Date fechaFin;
     private double porcentaje;
 
     @OneToMany
-    @JoinColumn(name = "evento_id")
+    //@JoinColumn(name = "evento_id")
     private List<Evento> eventos;
 }
