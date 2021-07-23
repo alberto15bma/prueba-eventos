@@ -19,5 +19,4 @@ public class UsuarioController {
     public ResponseEntity<Respuesta> login(@RequestBody Usuario usuario){
         return usuarioService.login(usuario);
     }
-
 }

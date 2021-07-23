@@ -11,11 +11,12 @@ import java.sql.Timestamp;
 public class Usuario {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
     private String nombre;
     private String usuario;
     private String password;
     private String rol;
-    private Timestamp fecha_creacion;
+    @Column(name = "fecha_creacion")
+    private Timestamp fechaCreacion;
 }
