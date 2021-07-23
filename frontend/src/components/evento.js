@@ -1,20 +1,16 @@
 import React, { Component, Fragment } from 'react';
 import { Redirect } from 'react-router-dom'
-import TreeView from 'devextreme-react/tree-view';
 import Button from 'devextreme-react/button';
 import Popup from 'devextreme-react/popup';
 import TextBox from 'devextreme-react/text-box';
-import TextArea from 'devextreme-react/text-area';
 import DateBox from 'devextreme-react/date-box';
 import SelectBox from 'devextreme-react/select-box';
 import { Toast } from 'devextreme-react/toast';
-import DataGrid, { Column, SearchPanel, ColumnFixing, Pager, FilterRow } from 'devextreme-react/data-grid';
-import {NavLink} from 'react-router-dom';
+import { NumberBox } from 'devextreme-react/number-box';
 import app from '../config';
 import apis from '../apis';
 import constantes from '../constantes';
 import store from 'store'
-import { Center } from 'devextreme-react/map'
 import Header from './header';;
 
 const formatCurrency = new Intl.NumberFormat('en-US', {
@@ -33,26 +29,19 @@ const formatCurrency = new Intl.NumberFormat('en-US', {
             promociones:[],
             tipo: ["Publico", "Privado"],
             usuario_id: 0,
-            orientation: 'horizontal',
-            submenuDirection: 'auto',
-            hideSubmenuOnMouseLeave: false,
-            currentProduct: null,
             contador_tarea : 0,
             titulo_modal: "Agregar tarea",
             visible_modal:false,
-            activar_combo:true,
             fecha_actual: new Date(),
-            titulo: "",
-            descripcion:"",
-            fecha_fin:"",
             estado:"",
-            focusFila:0,
-            tarea_id:0,
-            estado_id: 1,
+            nombre_evento:"",
+            empresario:"",
+            cantidad_entradas:"",
+            precio:"",
+            fecha_evento: "",
+            tipo_evento:"",
             activar_edicion:true,
             activar_guardar:false,
-            tarea_seleccion: null,
-            estados_tareas: [],
             texto_boton:"Guardar",
             visible_notificacion: false,
             mensaje_notificacion:"",
@@ -112,18 +101,14 @@ const formatCurrency = new Intl.NumberFormat('en-US', {
 
     limpiarData = () => {
         this.setState({
-            tarea_id:0,
-            titulo: "", 
-            descripcion: "", 
-            fecha_fin: "", 
-            estado: "", 
-            estado_tarea: null,
-            estado_id: 1,
-            fecha_creacion: new Date(),
-            usuarios:null,
-            visible_modal:false,
-            focusFila:0,
-            activar_edicion: true
+            nombre_evento: "", 
+            empresario: "", 
+            fecha_evento: "", 
+            precio: "", 
+            cantidad_entradas: "",
+            tipo_evento: "",
+            activar_edicion: true,
+            visible_modal:false
         })
     }
 
@@ -136,8 +121,13 @@ const formatCurrency = new Intl.NumberFormat('en-US', {
     }
 
     validarData = () => {
-        const {titulo, fecha_fin} = this.state;
-        if(titulo.length === 0 || fecha_fin.length === 0){
+        const {nombre_evento, empresario, fecha_evento, precio, cantidad_entradas, tipo_evento} = this.state;
+        if(nombre_evento.length === 0 
+            || empresario.length === 0 
+            || fecha_evento.length === 0
+            || precio.length === 0
+            || cantidad_entradas.length === 0
+            || tipo_evento.length === 0){
             this.mostrarNotificacion(constantes.error, constantes.error_campos);
             return false;
         }
@@ -145,30 +135,29 @@ const formatCurrency = new Intl.NumberFormat('en-US', {
     }
 
 
-    guardarTarea = async (e) => {
+    guardarEvento = async (e) => {
         if(this.validarData()) {
-            const {titulo, descripcion, fecha_fin, estado_id, usuario_id, tipo_dialogo} = this.state;
+            const {nombre_evento, empresario, fecha_evento, precio, cantidad_entradas, tipo_evento, tipo_dialogo} = this.state;
             let parametros = { 
-                titulo, 
-                descripcion, 
-                fecha_fin,  
-                estado_tarea: {id: estado_id},
-                usuario_id,
-                fecha_creacion: new Date(),
-                //tarea_id: 1,
-                usuarios: {id: usuario_id}  
+                nombre: nombre_evento, 
+                empresario, 
+                fecha: fecha_evento,  
+                precio,
+                tipo: tipo_evento,
+                cantidadEntradas: cantidad_entradas,
+                estado: "Activo"
             }
             if(tipo_dialogo === 1){         
-                let res = await app.consulta(apis.crear_tarea, parametros);
+                let res = await app.consulta(apis.crear_evento, parametros);
                 this.limpiarData();
-                this.cargarEventos(this.state.usuario_id);
+                this.cargarEventos();
                 if(res != null){        
                 this.mostrarNotificacion(constantes.success, constantes.guardado_correctamente);
                 }else {
                     this.mostrarNotificacion(constantes.error, constantes.error_guardar);
                 }
             }else {
-                console.log(fecha_fin)
+                
                 parametros.id = this.state.tarea_id;
                 let res = await app.consulta(apis.modificar_tarea, parametros);
                 this.limpiarData();
@@ -181,36 +170,13 @@ const formatCurrency = new Intl.NumberFormat('en-US', {
             } 
         }
  }
-    cambiarTitulo = (e) => this.setState({titulo: e.value})
-    cambiarDescripcion = (e) => this.setState({descripcion: e.value})
-    cambiarFecha = (e) => this.setState({fecha_fin: e.value})
+    cambiarNombreEvento = (e) => this.setState({nombre_evento: e.value})
+    cambiarEmpresario = (e) => this.setState({empresario: e.value})
+    cambiarFechaEvento = (e) => this.setState({fecha_evento: e.value})
+    cambiarPrecio = (e) => this.setState({precio: e.value})
+    cambiarCantidadEntradas = (e) => this.setState({cantidad_entradas: e.value})
+    cambiarTipoEvento = (e) => this.setState({tipo_evento: e.value})
 
-
-    onFocusedRowChanged = (e) => {
-        let data = e.selectedRowsData[0]
-        this.setState({         
-            tarea_seleccion: data,
-            //focusFila: e.component.option('focusedRowKey'),
-            activar_edicion: data.estado_tarea.id === 4 ? true : false,
-            titulo: data.titulo,
-            descripcion: data.descripcion,
-            fecha_fin: data.fecha_fin,
-            estado_id: data.estado_tarea.id,
-            tarea_id: data.id
-        });
-        
-        console.log(e.selectedRowsData[0])
-    }
-
-    colorEstado = (e) => {
-        return <div style={{background: e.value.color, color:"#fff", textAlign:"center", padding:"3px 10px", borderRadius:"5px", fontWeight: "bold"}}>{e.value.nombre}</div>
-    }
-    comboEstados = (e) => {
-        return <div style={{display:"flex", alignItems:"Center"}}>
-            <div style={{background: e.color, width:"30px", height:"30px", marginRight:"10px"}}></div>
-            <div>{e.nombre}</div>
-        </div>
-    }
 
     seleccionEstado = (e) => {
         this.setState({estado_id: e.value})
@@ -248,7 +214,6 @@ const formatCurrency = new Intl.NumberFormat('en-US', {
                         <div className="div_header">
                             <span>Total Eventos {this.state.eventos.length}</span>
                             <div>
-                                <Button text="Modificar" disabled={this.state.activar_edicion} type="normal" onClick={() => this.abrirModalEvento("editar")}/>
                                 <span className="espacio_horizontal"></span>
                                 <Button text="Nuevo evento" disabled={this.state.activar_guardar} type="default" onClick={() => this.abrirModalEvento("crear")}/>
                             </div>
@@ -285,7 +250,6 @@ const formatCurrency = new Intl.NumberFormat('en-US', {
                         <div className="div_header">
                             <span>Total Promociones {promociones.length}</span>
                             <div>
-                                <Button text="Modificar" disabled={this.state.activar_edicion} type="normal" onClick={() => this.abrirModal("editar")}/>
                                 <span className="espacio_horizontal"></span>
                                 <Button text="Nueva promoción" disabled={this.state.activar_guardar} type="default" onClick={() => this.abrirModal("crear")}/>
                             </div>
@@ -344,30 +308,45 @@ const formatCurrency = new Intl.NumberFormat('en-US', {
 
                         <div className="dx-fieldset">
                         <div className="dx-field">                         
-                              <TextBox className="dx-field-value" width= "100%" name="titulo" valueChangeEvent="keyup" value={this.state.titulo} onValueChanged={this.cambiarTitulo.bind()} placeholder="Nombre" />
+                              <TextBox className="dx-field-value" width= "100%" valueChangeEvent="keyup" value={this.state.nombre_evento} onValueChanged={this.cambiarNombreEvento.bind()} placeholder="Nombre" />
                             </div>
                             <div className="dx-field">                         
-                              <TextBox className="dx-field-value" width= "100%" name="titulo" valueChangeEvent="keyup" value={this.state.titulo} onValueChanged={this.cambiarTitulo.bind()} placeholder="Empresario" />
+                              <TextBox className="dx-field-value" width= "100%" valueChangeEvent="keyup" value={this.state.empresario} onValueChanged={this.cambiarEmpresario.bind()} placeholder="Empresario" />
+                            </div>
+                            <div className="dx-field">                           
+                                <NumberBox
+                                value={this.state.cantidad_entradas}
+                                placeholder="Cantidad de entradas"
+                                showSpinButtons={true}
+                                onKeyDown={this.keyDown}
+                                onValueChanged={this.cambiarCantidadEntradas.bind()}
+                                width= "100%" 
+                            />             
+
                             </div>
                             <div className="dx-field">
-                                <TextBox className="dx-field-value" width= "100%" placeholder="Cantidad de entradas" name="titulo" valueChangeEvent="keyup" value={this.state.titulo} onValueChanged={this.cambiarTitulo.bind()} />
+                            <NumberBox
+                                value={this.state.precio}
+                                showSpinButtons={true}
+                                onKeyDown={this.keyDown}
+                        
+                                onValueChanged={this.cambiarPrecio.bind()}
+                                width= "100%" ali placeholder="Precio"
+                            />              
                             </div>
                             <div className="dx-field">
-                                <TextBox className="dx-field-value" width= "100%" placeholder="Precio" name="titulo" valueChangeEvent="keyup" value={this.state.titulo} onValueChanged={this.cambiarTitulo.bind()} />
-                            </div>
-                            <div className="dx-field">
-                                <DateBox width={"100%"} defaultValue={this.state.fecha_actual} valueChangeEvent="keyup" value={this.state.fecha_fin} placeholder="Fecha" onValueChanged={this.cambiarFecha.bind()} type="date" displayFormat="dd/MM/yyyy" />
+                                <DateBox width={"100%"} defaultValue={this.state.fecha_evento} valueChangeEvent="keyup" value={this.state.fecha_evento} placeholder="Fecha" onValueChanged={this.cambiarFechaEvento.bind()} type="date" displayFormat="dd/MM/yyyy" />
                             </div>
                             <div className="dx-field">
                                 <div className="dx-field-label">Tipo:</div>
                                 <div className="dx-field-value">
-                                        <SelectBox dataSource={this.state.tipo} width={"100%"} onValueChanged={this.seleccionEstado}  value={this.state.estado_id} placeholder="Seleccione" />
+                                        <SelectBox dataSource={this.state.tipo} width={"100%"} onValueChanged={this.cambiarTipoEvento}  value={this.state.tipo_evento} placeholder="Seleccione" />
                                 </div>
                             </div>
                         </div>                        
                     </div>
                     <div className="div_botones_modal">
-                        <Button text={this.state.texto_boton} width={110}  type="default" onClick={() => this.guardarTarea()}/>
+                        <Button text={this.state.texto_boton} width={110}  type="default" onClick={() => this.guardarEvento()}/>
                         <div className="espacio_horizontal"></div>
                         <Button text="Cancelar"  width={110}   type="normal" onClick={() => this.setState({visible_modal:false})}/>
                     </div>
