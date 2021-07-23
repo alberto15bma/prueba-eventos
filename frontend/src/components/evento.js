@@ -31,7 +31,9 @@ const formatCurrency = new Intl.NumberFormat('en-US', {
             usuario_id: 0,
             contador_tarea : 0,
             titulo_modal: "Agregar tarea",
+            titulo_modal_promocion:"Agregar promoción",
             visible_modal:false,
+            visible_modal_promocion:false,
             fecha_actual: new Date(),
             estado:"",
             nombre_evento:"",
@@ -40,6 +42,10 @@ const formatCurrency = new Intl.NumberFormat('en-US', {
             precio:"",
             fecha_evento: "",
             tipo_evento:"",
+            nombre_promocion:"",
+            porcentaje:"",
+            fecha_inicio_promocion:"",
+            fecha_fin_promocion:"",
             activar_edicion:true,
             activar_guardar:false,
             texto_boton:"Guardar",
@@ -98,6 +104,14 @@ const formatCurrency = new Intl.NumberFormat('en-US', {
             this.setState({titulo_modal: "Modificar Evento", visible_modal:true, activar_combo: false, texto_boton:"Modificar", tipo_dialogo:2})
         }
     }
+    abrirModalPromocion = (e) => {
+        if(e === "crear") {
+            this.limpiarData();
+            this.setState({titulo_modal_promocion: "Crear Promoción", visible_modal_promocion:true, texto_boton:"Guardar", tipo_dialogo_promocion:1})
+        }else {
+            this.setState({titulo_modal_promocion: "Modificar Promoción", visible_modal_promocion:true, texto_boton:"Modificar", tipo_dialogo_promocion:2})
+        }
+    }
 
     limpiarData = () => {
         this.setState({
@@ -108,7 +122,12 @@ const formatCurrency = new Intl.NumberFormat('en-US', {
             cantidad_entradas: "",
             tipo_evento: "",
             activar_edicion: true,
-            visible_modal:false
+            visible_modal:false,
+            visible_modal_promocion:false,
+            nombre_promocion:"",
+            porcentaje:"",
+            fecha_inicio_promocion:"",
+            fecha_fin_promocion:""
         })
     }
 
@@ -128,6 +147,17 @@ const formatCurrency = new Intl.NumberFormat('en-US', {
             || precio.length === 0
             || cantidad_entradas.length === 0
             || tipo_evento.length === 0){
+            this.mostrarNotificacion(constantes.error, constantes.error_campos);
+            return false;
+        }
+        return true;;
+    }
+    validarDataPromocion = () => {
+        const {nombre_promocion, porcentaje, fecha_inicio_promocion, fecha_fin_promocion} = this.state;
+        if(nombre_promocion.length === 0 
+            || porcentaje.length === 0 
+            || fecha_inicio_promocion.length === 0
+            || fecha_fin_promocion.length === 0){
             this.mostrarNotificacion(constantes.error, constantes.error_campos);
             return false;
         }
@@ -158,24 +188,48 @@ const formatCurrency = new Intl.NumberFormat('en-US', {
                 }
             }else {
                 
-                parametros.id = this.state.tarea_id;
-                let res = await app.consulta(apis.modificar_tarea, parametros);
-                this.limpiarData();
-                this.cargarEventos(this.state.usuario_id);
-                if(res != null){
-                this.mostrarNotificacion(constantes.success, constantes.modificado_correctamente);
-                }else {
-                    this.mostrarNotificacion(constantes.error, constantes.error_modificar);
-                }
+               
             } 
         }
  }
+
+ guardarPromocion = async (e) => {
+    if(this.validarDataPromocion()) {
+        const {nombre_promocion, porcentaje, fecha_inicio_promocion, fecha_fin_promocion, tipo_dialogo_promocion} = this.state;
+        let parametros = { 
+            nombre: nombre_promocion, 
+            fechaInicio: fecha_inicio_promocion,
+            fechaFin: fecha_fin_promocion,
+            porcentaje
+        }
+        if(tipo_dialogo_promocion === 1){         
+            let res = await app.consulta(apis.crear_promocion, parametros);
+            this.limpiarData();
+            this.cargarPromocion();
+            if(res != null){        
+            this.mostrarNotificacion(constantes.success, constantes.guardado_correctamente);
+            }else {
+                this.mostrarNotificacion(constantes.error, constantes.error_guardar);
+            }
+        }else {
+            
+        
+        } 
+    }
+}
+
+
     cambiarNombreEvento = (e) => this.setState({nombre_evento: e.value})
     cambiarEmpresario = (e) => this.setState({empresario: e.value})
     cambiarFechaEvento = (e) => this.setState({fecha_evento: e.value})
     cambiarPrecio = (e) => this.setState({precio: e.value})
     cambiarCantidadEntradas = (e) => this.setState({cantidad_entradas: e.value})
     cambiarTipoEvento = (e) => this.setState({tipo_evento: e.value})
+
+    cambiarNombrePromocion = (e) => this.setState({nombre_promocion: e.value})
+    cambiarPorcentaje = (e) => this.setState({porcentaje: e.value})
+    cambiarFechaInicioPromocion = (e) => this.setState({fecha_inicio_promocion: e.value})
+    cambiarFechaFinPromocion = (e) => this.setState({fecha_fin_promocion: e.value})
 
 
     seleccionEstado = (e) => {
@@ -251,7 +305,7 @@ const formatCurrency = new Intl.NumberFormat('en-US', {
                             <span>Total Promociones {promociones.length}</span>
                             <div>
                                 <span className="espacio_horizontal"></span>
-                                <Button text="Nueva promoción" disabled={this.state.activar_guardar} type="default" onClick={() => this.abrirModal("crear")}/>
+                                <Button text="Nueva promoción" disabled={this.state.activar_guardar} type="default" onClick={() => this.abrirModalPromocion("crear")}/>
                             </div>
                             
                         </div>
@@ -267,6 +321,8 @@ const formatCurrency = new Intl.NumberFormat('en-US', {
                                           <div className="item-options">
                                             <div>
                                               <div className="address">{e.nombre}</div>
+                                              <div className="address">Desde: {e.fechaInicio}</div>
+                                              <div className="address">Hasta: {e.fechaFin}</div>
                                               <div className="agent">
                                                                     
                                               </div>                                                           
@@ -349,6 +405,50 @@ const formatCurrency = new Intl.NumberFormat('en-US', {
                         <Button text={this.state.texto_boton} width={110}  type="default" onClick={() => this.guardarEvento()}/>
                         <div className="espacio_horizontal"></div>
                         <Button text="Cancelar"  width={110}   type="normal" onClick={() => this.setState({visible_modal:false})}/>
+                    </div>
+
+                </Popup>
+                <Popup
+                    width={360}
+                    height={440}
+                    showTitle={true}
+                    title={this.state.titulo_modal_promocion}
+                    dragEnabled={false}
+                    closeOnOutsideClick={false}
+                    showCloseButton={false}
+                    visible={this.state.visible_modal_promocion}
+                    onHiding={this.handlePopupHidden}
+                    contentRender={this.renderPopup}
+                    >
+
+                    <div className="form">
+
+                        <div className="dx-fieldset">
+                        <div className="dx-field">                         
+                              <TextBox className="dx-field-value" width= "100%" valueChangeEvent="keyup" value={this.state.nombre_promocion} onValueChanged={this.cambiarNombrePromocion.bind()} placeholder="Nombre promoción" />
+                            </div>
+                            <div className="dx-field">                           
+                                <NumberBox
+                                value={this.state.porcentaje}
+                                placeholder="Porcentaje"
+                                showSpinButtons={true}
+                                onKeyDown={this.keyDown}
+                                onValueChanged={this.cambiarPorcentaje.bind()}
+                                width= "100%" 
+                            />             
+                            </div>
+                            <div className="dx-field">
+                                <DateBox width={"100%"} defaultValue={this.state.fecha_inicio_promocion} valueChangeEvent="keyup" value={this.state.fecha_inicio_promocion} placeholder="Fecha inicio" onValueChanged={this.cambiarFechaInicioPromocion.bind()} type="date" displayFormat="dd/MM/yyyy" />
+                            </div>
+                            <div className="dx-field">
+                                <DateBox width={"100%"} defaultValue={this.state.fecha_fin_promocion} valueChangeEvent="keyup" value={this.state.fecha_fin_promocion} placeholder="Fecha fecha fin" onValueChanged={this.cambiarFechaFinPromocion.bind()} type="date" displayFormat="dd/MM/yyyy" />
+                            </div>
+                        </div>                        
+                    </div>
+                    <div className="div_botones_modal">
+                        <Button text={this.state.texto_boton} width={110}  type="default" onClick={() => this.guardarPromocion()}/>
+                        <div className="espacio_horizontal"></div>
+                        <Button text="Cancelar"  width={110}   type="normal" onClick={() => this.setState({visible_modal_promocion:false})}/>
                     </div>
 
                 </Popup>
